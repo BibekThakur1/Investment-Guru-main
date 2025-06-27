@@ -16,7 +16,7 @@ const Footer = () => {
       { name: 'Courses', href: '#services' },
       { name: 'About Us', href: '#about' },
       { name: 'Our Team', href: '#team' },
-      // { name: 'Careers', href: '/careers' },
+      { name: 'Schedule a Call', href: '/consultation' },
       // { name: 'News & Updates', href: '/news' },
       { name: 'Contact Us', href: '#contact' },
       // { name: 'Privacy Policy', href: '/privacy' }

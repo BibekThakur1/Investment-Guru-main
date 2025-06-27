@@ -24,7 +24,14 @@ function App() {
           </div>
         }
       />
-      <Route path="/consultation" element={<ScheduleConsultation />} />
+      <Route path="/consultation" element={
+        <div className="min-h-screen">
+            <Header />
+            <ScheduleConsultation />
+            <Footer />
+          </div>
+      } 
+      />
     </Routes>
   );
 }

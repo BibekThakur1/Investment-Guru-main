@@ -148,13 +148,14 @@ const Services = () => {
             <p className="text-primary-100 mb-6 max-w-2xl mx-auto">
               Get personalized investment advice from our expert team. Schedule a free consultation today.
             </p>
-            <motion.button
+            <motion.a
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              href='/consultation'
               className="bg-white text-primary-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
             >
               Schedule Free Consultation
-            </motion.button>
+            </motion.a>
           </div>
         </motion.div>
       </div>

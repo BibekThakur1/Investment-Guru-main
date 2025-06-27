@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import emailjs from "@emailjs/browser";
 import {
   Calendar,
   Clock,
@@ -11,13 +12,15 @@ import {
   DollarSign,
   Target,
   CheckCircle,
-  AlertCircle,
+  AlertCircle,  
   ArrowLeft,
   Send,
   Building,
 } from "lucide-react";
 
 const ScheduleConsultation = () => {
+  const formRef = useRef<HTMLFormElement | null>(null);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,69 +29,20 @@ const ScheduleConsultation = () => {
     preferredDate: "",
     preferredTime: "",
     consultationType: "",
-    investmentGoals: "",
-    currentInvestments: "",
-    riskTolerance: "",
-    investmentAmount: "",
     message: "",
     hearAboutUs: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitStatus("success");
-
-      // Reset success message after 5 seconds
-      setTimeout(() => setSubmitStatus("idle"), 5000);
-    }, 2000);
-  };
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">(
+    "idle"
+  );
 
   const consultationTypes = [
     "Investment Planning",
     "Portfolio Review",
-    "Retirement Planning",
-    "Risk Assessment",
-    "Tax Planning",
-    "Estate Planning",
+    "Course Selection",
     "General Consultation",
-  ];
-
-  const riskToleranceOptions = [
-    "Conservative (Low Risk)",
-    "Moderate (Medium Risk)",
-    "Aggressive (High Risk)",
-    "Not Sure",
-  ];
-
-  const investmentRanges = [
-    "Under NPR 1 Lakh",
-    "NPR 1-5 Lakhs",
-    "NPR 5-10 Lakhs",
-    "NPR 10-25 Lakhs",
-    "NPR 25-50 Lakhs",
-    "NPR 50 Lakhs+",
-    "Prefer not to say",
   ];
 
   const hearAboutUsOptions = [
@@ -120,6 +74,54 @@ const ScheduleConsultation = () => {
     "5:00 PM",
     "5:30 PM",
   ];
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+
+    try {
+      if (!formRef.current) throw new Error("Form ref not found");
+
+      const result = await emailjs.sendForm(
+        "service_2zi9vgq", // your EmailJS service ID
+        "template_f8n6646", // your EmailJS template ID
+        formRef.current,
+        "8mUrLObeDI3-3nhyd" // your EmailJS public key (user ID)
+      );
+
+      console.log("Email sent:", result.text);
+      setSubmitStatus("success");
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        preferredDate: "",
+        preferredTime: "",
+        consultationType: "",
+        message: "",
+        hearAboutUs: "",
+      });
+    } catch (error) {
+      console.error("Email send error:", error);
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 to-white min-h-screen">
@@ -154,46 +156,9 @@ const ScheduleConsultation = () => {
             complimentary consultation with our expert investment advisors and
             discover personalized strategies for your goals.
           </p>
-
-          {/* Benefits */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[
-              {
-                icon: Target,
-                title: "Personalized Strategy",
-                desc: "Tailored investment plan for your goals",
-              },
-              {
-                icon: CheckCircle,
-                title: "Expert Guidance",
-                desc: "15+ years of investment experience",
-              },
-              {
-                icon: DollarSign,
-                title: "No Obligation",
-                desc: "Completely free with no strings attached",
-              },
-            ].map((benefit, index) => (
-              <motion.div
-                key={benefit.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className="text-center p-4 bg-white rounded-lg shadow-sm"
-              >
-                <div className="inline-flex p-3 bg-primary-100 rounded-full mb-3">
-                  <benefit.icon size={24} className="text-primary-600" />
-                </div>
-                <h3 className="font-semibold text-accent-900 mb-1">
-                  {benefit.title}
-                </h3>
-                <p className="text-sm text-accent-600">{benefit.desc}</p>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
 
-        {/* Success Message */}
+        {/* Success / Error Message */}
         {submitStatus === "success" && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -212,6 +177,27 @@ const ScheduleConsultation = () => {
                 Thank you for scheduling your free consultation. Our team will
                 contact you within 24 hours to confirm your appointment and
                 provide meeting details.
+              </p>
+            </div>
+          </motion.div>
+        )}
+        {submitStatus === "error" && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl flex items-start"
+          >
+            <AlertCircle
+              size={24}
+              className="text-red-600 mr-4 flex-shrink-0 mt-1"
+            />
+            <div>
+              <h3 className="text-red-800 font-semibold mb-2">
+                Failed to Schedule Consultation
+              </h3>
+              <p className="text-red-700">
+                Something went wrong while sending your request. Please try
+                again later.
               </p>
             </div>
           </motion.div>
@@ -237,8 +223,21 @@ const ScheduleConsultation = () => {
               </p>
             </div>
           </div>
+  {/* Success Message */}
+  {submitStatus === 'success' && (
+    <div className="mb-6 p-4 bg-green-100 text-green-800 rounded">
+      Consultation Scheduled Successfully! We will contact you shortly.
+    </div>
+  )}
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-8" noValidate>
+            {/* Hidden Inputs required by EmailJS template */}
+            <input type="hidden" name="to_name" value="Bibek" />
+            <input
+              type="hidden"
+              name="from_name"
+              value={`${formData.firstName} ${formData.lastName}`}
+            />
 
-          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Personal Information */}
             <div>
               <h3 className="text-lg font-semibold text-accent-900 mb-4 flex items-center">
@@ -396,128 +395,26 @@ const ScheduleConsultation = () => {
                     Consultation Type *
                   </label>
                   <div className="relative">
-                    <Building
-                      size={18}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent-400 z-10"
-                    />
-                    <select
-                      id="consultationType"
-                      name="consultationType"
-                      value={formData.consultationType}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors appearance-none bg-white"
-                    >
-                      <option value="">Select consultation type</option>
-                      {consultationTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Investment Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-accent-900 mb-4 flex items-center">
-                <Target size={20} className="text-primary-600 mr-2" />
-                Investment Information
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="investmentGoals"
-                    className="block text-sm font-medium text-accent-700 mb-2"
-                  >
-                    Investment Goals *
-                  </label>
-                  <textarea
-                    id="investmentGoals"
-                    name="investmentGoals"
-                    value={formData.investmentGoals}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-vertical"
-                    placeholder="Describe your investment goals (e.g., retirement planning, wealth building, education fund...)"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="riskTolerance"
-                      className="block text-sm font-medium text-accent-700 mb-2"
-                    >
-                      Risk Tolerance *
-                    </label>
-                    <select
-                      id="riskTolerance"
-                      name="riskTolerance"
-                      value={formData.riskTolerance}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    >
-                      <option value="">Select risk tolerance</option>
-                      {riskToleranceOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="investmentAmount"
-                      className="block text-sm font-medium text-accent-700 mb-2"
-                    >
-                      Investment Amount Range
-                    </label>
-                    <div className="relative">
-                      <DollarSign
+                  <Building
                         size={18}
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent-400"
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-accent-400 z-10"
                       />
                       <select
-                        id="investmentAmount"
-                        name="investmentAmount"
-                        value={formData.investmentAmount}
+                        id="consultationType"
+                        name="consultationType"
+                        value={formData.consultationType}
                         onChange={handleInputChange}
+                        required
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors appearance-none bg-white"
                       >
-                        <option value="">Select amount range</option>
-                        {investmentRanges.map((range) => (
-                          <option key={range} value={range}>
-                            {range}
+                        <option value="">Select consultation type</option>
+                        {consultationTypes.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
                           </option>
                         ))}
                       </select>
                     </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="currentInvestments"
-                    className="block text-sm font-medium text-accent-700 mb-2"
-                  >
-                    Current Investments (Optional)
-                  </label>
-                  <textarea
-                    id="currentInvestments"
-                    name="currentInvestments"
-                    value={formData.currentInvestments}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-vertical"
-                    placeholder="Tell us about your current investment portfolio (stocks, bonds, mutual funds, real estate, etc.)"
-                  />
                 </div>
               </div>
             </div>
